@@ -42,6 +42,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Set;
+import java.util.zip.Adler32;
 
 /**
  * Client library for Android Market license verifications.
@@ -211,27 +212,30 @@ public class LicenseChecker implements ServiceConnection {
             startTimeout();
         }
 
-        private static final int ERROR_CONTACTING_SERVER = 0x101;
-        private static final int ERROR_INVALID_PACKAGE_NAME = 0x102;
-        private static final int ERROR_NON_MATCHING_UID = 0x103;
+        private static final int ERROR_CONTACTING_SERVER = 6684774;
+        private static final int ERROR_INVALID_PACKAGE_NAME = 6750311;
+        private static final int ERROR_NON_MATCHING_UID = 6815848;
 
         // Runs in IPC thread pool. Post it to the Handler, so we can guarantee
         // either this or the timeout runs.
         public void verifyLicense(final int responseCode, final String signedData,
                 final String signature) {
+            Adler32 adler32 = new Adler32();
+            adler32.update(responseCode);
+            final int responseCode2 = (int) adler32.getValue();
             mHandler.post(new Runnable() {
                 public void run() {
                     Log.i(TAG, "Received response.");
                     // Make sure it hasn't already timed out.
                     if (mChecksInProgress.contains(mValidator)) {
                         clearTimeout();
-                        mValidator.verify(mPublicKey, responseCode, signedData, signature);
+                        mValidator.verify(mPublicKey, responseCode2, signedData, signature);
                         finishCheck(mValidator);
                     }
                     if (DEBUG_LICENSE_ERROR) {
                         boolean logResponse;
                         String stringError = null;
-                        switch (responseCode) {
+                        switch (responseCode2) {
                             case ERROR_CONTACTING_SERVER:
                                 logResponse = true;
                                 stringError = "ERROR_CONTACTING_SERVER";

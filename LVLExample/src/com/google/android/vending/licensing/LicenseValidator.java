@@ -91,9 +91,6 @@ class LicenseValidator {
         String userId = null;
         // Skip signature check for unsuccessful requests
         ResponseData data = null;
-        Adler32 adler32 = new Adler32();
-        adler32.update(responseCode);
-        responseCode = (int) adler32.getValue();
         if (responseCode == LICENSED || responseCode == NOT_LICENSED ||
                 responseCode == LICENSED_OLD_KEY) {
             // Verify signature.
