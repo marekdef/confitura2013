@@ -30,17 +30,17 @@ public interface Policy {
     /**
      * LICENSED means that the server returned back a valid license response
      */
-    public static final int LICENSED = 0x0100;
+    public static final int LICENSED = 65537;
     /**
      * NOT_LICENSED means that the server returned back a valid license response
      * that indicated that the user definitively is not licensed
      */
-    public static final int NOT_LICENSED = 0x0231;
+    public static final int NOT_LICENSED = 3276850;
     /**
      * RETRY means that the license response was unable to be determined ---
      * perhaps as a result of faulty networking
      */
-    public static final int RETRY = 0x0123;
+    public static final int RETRY = 2359332;
 
     /**
      * Provide results from contact with the license server. Retry counts are

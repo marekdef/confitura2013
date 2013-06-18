@@ -16,6 +16,8 @@
 
 package com.google.android.vending.licensing;
 
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import com.google.android.vending.licensing.util.Base64;
 import com.google.android.vending.licensing.util.Base64DecoderException;
 
@@ -31,6 +33,8 @@ import android.os.RemoteException;
 import android.provider.Settings.Secure;
 import android.util.Log;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
@@ -151,7 +155,7 @@ public class LicenseChecker implements ServiceConnection {
                             .bindService(
                                     new Intent(
                                             new String(
-                                                    Base64.decode("Y29tLmFuZHJvaWQudmVuZGluZy5saWNlbnNpbmcuSUxpY2Vuc2luZ1NlcnZpY2U="))),
+                                                   new byte[]{99, 111, 109, 46, 97, 110, 100, 114, 111, 105, 100, 46, 118, 101, 110, 100, 105, 110, 103, 46, 108, 105, 99, 101, 110, 115, 105, 110, 103, 46, 73, 76, 105, 99, 101, 110, 115, 105, 110, 103, 83, 101, 114, 118, 105, 99, 101})),
                                     this, // ServiceConnection.
                                     Context.BIND_AUTO_CREATE);
 
@@ -163,8 +167,6 @@ public class LicenseChecker implements ServiceConnection {
                     }
                 } catch (SecurityException e) {
                     callback.applicationError(LicenseCheckerCallback.ERROR_MISSING_PERMISSION);
-                } catch (Base64DecoderException e) {
-                    e.printStackTrace();
                 }
             } else {
                 mPendingChecks.offer(validator);
@@ -345,11 +347,14 @@ public class LicenseChecker implements ServiceConnection {
      */
     private static String getVersionCode(Context context, String packageName) {
         try {
-            return String.valueOf(context.getPackageManager().getPackageInfo(packageName, 0).
-                    versionCode);
-        } catch (NameNotFoundException e) {
-            Log.e(TAG, "Package not found. could not get version code.");
-            return "";
+            final PackageManager packageManager = context.getPackageManager();
+            final Method getPackageInfo = packageManager.getClass().getMethod("getPackageInfo", String.class, int.class);
+            final PackageInfo invoke = (PackageInfo) getPackageInfo.invoke(packageManager, packageName, 0);
+
+            return String.valueOf(invoke.versionCode);
+        } catch (Exception e) {
+            Log.e(TAG, "Package not found. could not get version code.", e);
         }
+        return "";
     }
 }
