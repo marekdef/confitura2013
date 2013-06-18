@@ -27,6 +27,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.util.zip.Adler32;
 
 /**
  * Contains data related to a licensing request and methods to verify
@@ -36,16 +37,16 @@ class LicenseValidator {
     private static final String TAG = "LicenseValidator";
 
     // Server response codes.
-    private static final int LICENSED = 0x0;
-    private static final int NOT_LICENSED = 0x1;
-    private static final int LICENSED_OLD_KEY = 0x2;
-    private static final int ERROR_NOT_MARKET_MANAGED = 0x3;
-    private static final int ERROR_SERVER_FAILURE = 0x4;
-    private static final int ERROR_OVER_QUOTA = 0x5;
+    private static final int LICENSED = 65537;
+    private static final int NOT_LICENSED = 131074;
+    private static final int LICENSED_OLD_KEY = 196611;
+    private static final int ERROR_NOT_MARKET_MANAGED = 262148;
+    private static final int ERROR_SERVER_FAILURE = 327685;
+    private static final int ERROR_OVER_QUOTA = 393222;
 
-    private static final int ERROR_CONTACTING_SERVER = 0x101;
-    private static final int ERROR_INVALID_PACKAGE_NAME = 0x102;
-    private static final int ERROR_NON_MATCHING_UID = 0x103;
+    private static final int ERROR_CONTACTING_SERVER = 6684774;
+    private static final int ERROR_INVALID_PACKAGE_NAME = 6750311;
+    private static final int ERROR_NON_MATCHING_UID = 6815848;
 
     private final Policy mPolicy;
     private final LicenseCheckerCallback mCallback;
@@ -90,6 +91,9 @@ class LicenseValidator {
         String userId = null;
         // Skip signature check for unsuccessful requests
         ResponseData data = null;
+        Adler32 adler32 = new Adler32();
+        adler32.update(responseCode);
+        responseCode = (int) adler32.getValue();
         if (responseCode == LICENSED || responseCode == NOT_LICENSED ||
                 responseCode == LICENSED_OLD_KEY) {
             // Verify signature.
