@@ -55,5 +55,5 @@ public interface Policy {
     /**
      * Check if the user should be allowed access to the application.
      */
-    boolean allowAccess();
+    boolean pleaseDoAllowAccess();
 }

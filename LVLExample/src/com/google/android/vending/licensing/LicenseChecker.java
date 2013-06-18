@@ -25,7 +25,6 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
@@ -33,7 +32,6 @@ import android.os.RemoteException;
 import android.provider.Settings.Secure;
 import android.util.Log;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
@@ -141,9 +139,9 @@ public class LicenseChecker implements ServiceConnection {
     public synchronized void checkAccess(LicenseCheckerCallback callback) {
         // If we have a valid recent LICENSED response, we can skip asking
         // Market.
-        if (mPolicy.allowAccess()) {
+        if (mPolicy.pleaseDoAllowAccess()) {
             Log.i(TAG, "Using cached license response");
-            callback.allow(Policy.LICENSED);
+            callback.yesDoAllow(Policy.LICENSED);
         } else {
             LicenseValidator validator = new LicenseValidator(mPolicy, new NullDeviceLimiter(),
                     callback, generateNonce(), mPackageName, mVersionCode);
@@ -299,10 +297,10 @@ public class LicenseChecker implements ServiceConnection {
     private synchronized void handleServiceConnectionError(LicenseValidator validator) {
         mPolicy.processServerResponse(Policy.RETRY, null);
 
-        if (mPolicy.allowAccess()) {
-            validator.getCallback().allow(Policy.RETRY);
+        if (mPolicy.pleaseDoAllowAccess()) {
+            validator.getCallback().yesDoAllow(Policy.RETRY);
         } else {
-            validator.getCallback().dontAllow(Policy.RETRY);
+            validator.getCallback().pleaseDoNotAllow(Policy.RETRY);
         }
     }
 

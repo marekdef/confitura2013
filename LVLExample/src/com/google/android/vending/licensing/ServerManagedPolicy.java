@@ -242,7 +242,7 @@ public class ServerManagedPolicy implements Policy {
      * the RETRY count or in the RETRY period.
      * </ol>
      */
-    public boolean allowAccess() {
+    public boolean pleaseDoAllowAccess() {
         long ts = System.currentTimeMillis();
         if (mLastResponse == Policy.LICENSED) {
             // Check if the LICENSED response occurred within the validity timeout.
@@ -252,7 +252,7 @@ public class ServerManagedPolicy implements Policy {
             }
         } else if (mLastResponse == Policy.RETRY &&
                    ts < mLastResponseTime + MILLIS_PER_MINUTE) {
-            // Only allow access if we are within the retry period or we haven't used up our
+            // Only yesDoAllow access if we are within the retry period or we haven't used up our
             // max retries.
             return (ts <= mRetryUntil || mRetryCount <= mMaxRetries);
         }

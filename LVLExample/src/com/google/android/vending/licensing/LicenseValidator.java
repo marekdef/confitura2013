@@ -27,7 +27,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
-import java.util.zip.Adler32;
 
 /**
  * Contains data related to a licensing request and methods to verify
@@ -208,10 +207,10 @@ class LicenseValidator {
 
         // Given everything we know, including cached data, ask the policy if we should grant
         // access.
-        if (mPolicy.allowAccess()) {
-            mCallback.allow(response);
+        if (mPolicy.pleaseDoAllowAccess()) {
+            mCallback.yesDoAllow(response);
         } else {
-            mCallback.dontAllow(response);
+            mCallback.pleaseDoNotAllow(response);
         }
     }
 
@@ -220,6 +219,6 @@ class LicenseValidator {
     }
 
     private void handleInvalidResponse() {
-        mCallback.dontAllow(Policy.NOT_LICENSED);
+        mCallback.pleaseDoNotAllow(Policy.NOT_LICENSED);
     }
 }

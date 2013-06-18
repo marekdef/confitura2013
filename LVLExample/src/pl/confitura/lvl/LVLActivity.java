@@ -16,6 +16,8 @@
 
 package pl.confitura.lvl;
 
+import android.graphics.Color;
+import android.widget.LinearLayout;
 import com.google.android.vending.licensing.AESObfuscator;
 import com.google.android.vending.licensing.LicenseChecker;
 import com.google.android.vending.licensing.LicenseCheckerCallback;
@@ -84,6 +86,7 @@ public class LVLActivity extends Activity {
     private static final int ERROR_CONTACTING_SERVER = 6684774;
     private static final int ERROR_INVALID_PACKAGE_NAME = 6750311;
     private static final int ERROR_NON_MATCHING_UID = 6815848;
+    private LinearLayout mBackground;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -98,26 +101,34 @@ public class LVLActivity extends Activity {
                 doCheck();
             }
         });
+        mBackground = (LinearLayout) findViewById(R.id.background);
 
         mHandler = new Handler();
 
         mLicenseCheckerCallback = new LicenseCheckerCallback() {
-            public void allow(int policyReason) {
+            public void yesDoAllow(int policyReason) {
                 if (isFinishing()) {
                     // Don't update UI if Activity is finishing.
                     return;
                 }
-                // Should allow user access.
+                // Should yesDoAllow user access.
                 displayResult(getString(R.string.allow));
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        mBackground.setBackgroundColor(Color.GREEN);
+                    }
+                });
+
             }
 
-            public void dontAllow(int policyReason) {
+            public void pleaseDoNotAllow(int policyReason) {
                 if (isFinishing()) {
                     // Don't update UI if Activity is finishing.
                     return;
                 }
                 displayResult(getString(R.string.dont_allow));
-                // Should not allow access. In most cases, the app should assume
+                // Should not yesDoAllow access. In most cases, the app should assume
                 // the user has access unless it encounters this. If it does,
                 // the app should inform the user of their unlicensed ways
                 // and then either shut down the app or limit the user to a
@@ -127,6 +138,12 @@ public class LVLActivity extends Activity {
                 // unavailable or there is another problem, we display a
                 // retry button on the dialog and a different message.
                 displayDialog(policyReason == Policy.RETRY);
+                mBackground.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        mBackground.setBackgroundColor((Color.RED));
+                    }
+                });
             }
 
             public void applicationError(int errorCode) {
@@ -161,9 +178,9 @@ public class LVLActivity extends Activity {
                 return "The application is licensed to the user. The user has purchased the application or the application only exists as a draft. Allow access according to Policy constraints.";
             case LICENSED_OLD_KEY:
                 return "Can indicate that the key pair used by the installed application version is invalid or compromised.\n" +
-                        "The application can allow access if needed or inform the user that an upgrade is available and limit further use until upgrade.";
+                        "The application can yesDoAllow access if needed or inform the user that an upgrade is available and limit further use until upgrade.";
             case NOT_LICENSED:
-                return "The application is not licensed to the user. Do not allow access.";
+                return "The application is not licensed to the user. Do not yesDoAllow access.";
             case ERROR_CONTACTING_SERVER:
                 return "Local error - the Google Play application was not able to reach the licensing server, possibly because of network availability problems.\n" +
                         "Retry the license check according to Policy retry limits.";
