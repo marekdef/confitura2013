@@ -100,13 +100,6 @@ public class LVLActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        try {
-            final Class<?> smaliHook = Class.forName("smaliHook");
-            Log.d(TAG, "Smali Hook found");
-        } catch (ClassNotFoundException e) {
-            Log.e(TAG, "ClassNotFoundException", e);
-        }
-
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
         setContentView(R.layout.main);
 
@@ -299,9 +292,23 @@ public class LVLActivity extends Activity {
             final String expectedCrc32 = getResources().getString(R.string.crc32);
             final JarEntry jarEntry = jarFile.getJarEntry("classes.dex");
             final String crcFromJar = Long.toHexString(jarEntry.getCrc());
+            Log.d(TAG, String.format("Comparing\n%s\nto\n%s", expectedCrc32, crcFromJar));
             return expectedCrc32.equals(crcFromJar);
         } catch (IOException e) {
             Log.e(TAG, "PackageManager.NameNotFoundException", e);
+        }
+        return false;
+    }
+
+    /**
+     * This method does not work with antilvl-1.4
+     */
+    private boolean isAntiLVL() {
+        try {
+            Class.forName("smaliHook");
+            return true;
+        } catch (ClassNotFoundException e) {
+
         }
         return false;
     }
