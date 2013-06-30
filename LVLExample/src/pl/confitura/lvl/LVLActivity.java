@@ -16,7 +16,10 @@
 
 package pl.confitura.lvl;
 
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.util.Log;
 import android.widget.LinearLayout;
 import com.google.android.vending.licensing.AESObfuscator;
 import com.google.android.vending.licensing.LicenseChecker;
@@ -37,6 +40,10 @@ import android.view.View;
 import android.view.Window;
 import android.widget.Button;
 import android.widget.TextView;
+
+import java.io.IOException;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 /**
  * Welcome to the world of Android Market licensing. We're so glad to have you
@@ -66,14 +73,13 @@ public class LVLActivity extends Activity {
             -46, 65, 30, -128, -103, -57, 74, -64, 51, 88, -95, -45, 77, -117, -36, -113, -11, 32, -64,
             89
     };
+    private static final String TAG = "LVLActivity";
 
     private TextView mStatusText;
     private Button mCheckLicenseButton;
 
     private LicenseCheckerCallback mLicenseCheckerCallback;
     private LicenseChecker mChecker;
-    // A handler on the UI thread.
-    private Handler mHandler;
 
     // Server response codes. Repeated
     private static final int LICENSED = 65537;
@@ -86,11 +92,21 @@ public class LVLActivity extends Activity {
     private static final int ERROR_CONTACTING_SERVER = 6684774;
     private static final int ERROR_INVALID_PACKAGE_NAME = 6750311;
     private static final int ERROR_NON_MATCHING_UID = 6815848;
+
+    private static final int ERROR_TAMPERED = 6815849;
     private LinearLayout mBackground;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        try {
+            final Class<?> smaliHook = Class.forName("smaliHook");
+            Log.d(TAG, "Smali Hook found");
+        } catch (ClassNotFoundException e) {
+            Log.e(TAG, "ClassNotFoundException", e);
+        }
+
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
         setContentView(R.layout.main);
 
@@ -103,17 +119,20 @@ public class LVLActivity extends Activity {
         });
         mBackground = (LinearLayout) findViewById(R.id.background);
 
-        mHandler = new Handler();
-
         mLicenseCheckerCallback = new LicenseCheckerCallback() {
             public void yesDoAllow(int policyReason) {
                 if (isFinishing()) {
                     // Don't update UI if Activity is finishing.
                     return;
                 }
+
+                if (!checkIntegrityWithCertificate() || !checkIntegrityWithCrc32()) {
+                    pleaseDoNotAllow(ERROR_TAMPERED);
+                    return;
+                }
                 // Should yesDoAllow user access.
                 displayResult(getString(R.string.allow));
-                mHandler.post(new Runnable() {
+                mBackground.post(new Runnable() {
                     @Override
                     public void run() {
                         mBackground.setBackgroundColor(Color.GREEN);
@@ -195,6 +214,8 @@ public class LVLActivity extends Activity {
                         "Typically caused by a development error.";
             case ERROR_NOT_MARKET_MANAGED:
                 return "Server error - the application (package name) was not recognized by Google Play.";
+            case ERROR_TAMPERED:
+                return "Local error - Tampered apk.";
         }
         return "";
     }
@@ -231,7 +252,7 @@ public class LVLActivity extends Activity {
     }
 
     private void displayResult(final String result) {
-        mHandler.post(new Runnable() {
+        mStatusText.post(new Runnable() {
             public void run() {
                 mStatusText.setText(result);
                 setProgressBarIndeterminateVisibility(false);
@@ -241,7 +262,7 @@ public class LVLActivity extends Activity {
     }
 
     private void displayDialog(final boolean showRetry) {
-        mHandler.post(new Runnable() {
+        mCheckLicenseButton.post(new Runnable() {
             public void run() {
                 setProgressBarIndeterminateVisibility(false);
                 showDialog(showRetry ? 1 : 0);
@@ -256,5 +277,32 @@ public class LVLActivity extends Activity {
     protected void onDestroy() {
         super.onDestroy();
         mChecker.onDestroy();
+    }
+
+
+    private boolean checkIntegrityWithCertificate() {
+        try {
+            final PackageInfo packageInfo = getPackageManager().getPackageInfo(getPackageName(), PackageManager.GET_SIGNATURES);
+            final String expectedSignature = getResources().getString(R.string.signature);
+            final String signatureFromApk = packageInfo.signatures[0].toCharsString();
+            Log.d(TAG, String.format("Comparing\n%s\nto\n%s", expectedSignature, signatureFromApk));
+            return expectedSignature.equals(signatureFromApk);
+        } catch (PackageManager.NameNotFoundException e) {
+            Log.e(TAG, "PackageManager.NameNotFoundException", e);
+        }
+        return false;
+    }
+
+    private boolean checkIntegrityWithCrc32() {
+        try {
+            JarFile jarFile = new JarFile(getPackageCodePath());
+            final String expectedCrc32 = getResources().getString(R.string.crc32);
+            final JarEntry jarEntry = jarFile.getJarEntry("classes.dex");
+            final String crcFromJar = Long.toHexString(jarEntry.getCrc());
+            return expectedCrc32.equals(crcFromJar);
+        } catch (IOException e) {
+            Log.e(TAG, "PackageManager.NameNotFoundException", e);
+        }
+        return false;
     }
 }
