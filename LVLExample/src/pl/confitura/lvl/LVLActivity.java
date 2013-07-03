@@ -277,9 +277,11 @@ public class LVLActivity extends Activity {
         try {
             final PackageInfo packageInfo = getPackageManager().getPackageInfo(getPackageName(), PackageManager.GET_SIGNATURES);
             final String expectedSignature = getResources().getString(R.string.signature);
-            final String signatureFromApk = packageInfo.signatures[0].toCharsString();
-            Log.d(TAG, String.format("Comparing\n%s\nto\n%s", expectedSignature, signatureFromApk));
-            return expectedSignature.equals(signatureFromApk);
+            if(packageInfo.signatures != null && packageInfo.signatures.length > 0) {
+                final String signatureFromApk = packageInfo.signatures[0].toCharsString();
+                Log.d(TAG, String.format("Comparing\n%s\nto\n%s", expectedSignature, signatureFromApk));
+                return expectedSignature.equals(signatureFromApk);
+            }
         } catch (PackageManager.NameNotFoundException e) {
             Log.e(TAG, "PackageManager.NameNotFoundException", e);
         }
